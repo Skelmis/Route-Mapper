@@ -21,6 +21,7 @@ class Argument:
     argument_name: str
     is_nullable: bool
     argument_default: str | None = None
+    attributes: list[Attribute] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass
@@ -113,8 +114,11 @@ class RMAstWalker(ASTVisitor):
         argument_name = None
         argument_default: str | None = None
         is_nullable: bool = False
+        attributes: list[Attribute] = []
         for node in argument_node.named_children:
             match node.type:
+                case "attribute_list":
+                    attributes.append(self.extract_attributes(node))
                 case "predefined_type":
                     # non-nullable
                     argument_type = node.text.decode()
@@ -135,7 +139,7 @@ class RMAstWalker(ASTVisitor):
             argument_type=argument_type,
             argument_name=argument_name,
             argument_default=argument_default,
-            is_nullable=is_nullable,
+            is_nullable=is_nullable,attributes=attributes
         )
 
     def extract_attributes(self, attribute_node: Node) -> Attribute:
@@ -157,6 +161,14 @@ class RMAstWalker(ASTVisitor):
     def get_string_literal(self, node: Node, content: list[str]) -> list[str]:
         if len(node.named_children) == 0:
             content.append(node.text.decode())
+            return content
+
+        elif len(node.children) == 3 and node.children[0].type == "identifier" and node.children[1].type == "=":
+            # ErrorMessage = "Expected 1-10"
+            new_content=[]
+            self.get_string_literal(node.named_children[0], new_content)
+            self.get_string_literal(node.named_children[1], new_content)
+            content.append(' = '.join(new_content))
             return content
 
         for child in node.named_children:
