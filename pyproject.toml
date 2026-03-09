@@ -1,6 +1,6 @@
 [project]
 name = "route-mapper"
-version = "0.1.0"
+version = "0.0.1"
 description = "C# Source Code to API Docs "
 authors = [{ name = "Skelmis", email = "skelmis.craft@gmail.com" }]
 requires-python = ">=3.13"
