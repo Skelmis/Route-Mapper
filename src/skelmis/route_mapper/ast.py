@@ -20,6 +20,8 @@ class Argument:
     argument_type: str
     argument_name: str
     is_nullable: bool
+    has_default_argument: bool = False
+    # Unless has_default_argument is True then ignore argument_default
     argument_default: str | None = None
     attributes: list[Attribute] = dataclasses.field(default_factory=list)
 
@@ -113,9 +115,10 @@ class RMAstWalker(ASTVisitor):
         argument_type = None
         argument_name = None
         argument_default: str | None = None
+        has_default_argument: bool=False
         is_nullable: bool = False
         attributes: list[Attribute] = []
-        for node in argument_node.named_children:
+        for node in argument_node.children:
             match node.type:
                 case "attribute_list":
                     attributes.extend(self.extract_attributes(node))
@@ -134,16 +137,18 @@ class RMAstWalker(ASTVisitor):
                     # We work off expectations next is default
                     arg_default_node = node.next_named_sibling
                     argument_default = arg_default_node.text.decode()
+                    has_default_argument = True
 
         return Argument(
             argument_type=argument_type,
             argument_name=argument_name,
-            argument_default=argument_default,
-            is_nullable=is_nullable,attributes=attributes
+            argument_default=argument_default,has_default_argument=has_default_argument,
+            is_nullable=is_nullable,
+            attributes=attributes,
         )
 
     def extract_attributes(self, attribute_node: Node) -> list[Attribute]:
-        attributes:list[Attribute] = []
+        attributes: list[Attribute] = []
         for attribute in attribute_node.named_children:
             if attribute.type != "attribute":
                 continue
@@ -157,7 +162,9 @@ class RMAstWalker(ASTVisitor):
                     case "attribute_argument_list":
                         args = self.get_string_literal(child, [])
 
-            attributes.append(Attribute(name=name.decode(), arguments=args if args is not None else None))
+            attributes.append(
+                Attribute(name=name.decode(), arguments=args if args is not None else None)
+            )
         return attributes
 
     def get_string_literal(self, node: Node, content: list[str]) -> list[str]:
@@ -165,12 +172,16 @@ class RMAstWalker(ASTVisitor):
             content.append(node.text.decode())
             return content
 
-        elif len(node.children) == 3 and node.children[0].type == "identifier" and node.children[1].type == "=":
+        elif (
+            len(node.children) == 3
+            and node.children[0].type == "identifier"
+            and node.children[1].type == "="
+        ):
             # ErrorMessage = "Expected 1-10"
-            new_content=[]
+            new_content = []
             self.get_string_literal(node.named_children[0], new_content)
             self.get_string_literal(node.named_children[1], new_content)
-            content.append(' = '.join(new_content))
+            content.append(" = ".join(new_content))
             return content
 
         for child in node.named_children:
