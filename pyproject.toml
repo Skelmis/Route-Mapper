@@ -1,5 +1,5 @@
 [project]
-name = "route-mapper"
+name = "skelmis-route-mapper"
 version = "0.0.1"
 description = "C# Source Code to API Docs "
 authors = [{ name = "Skelmis", email = "skelmis.craft@gmail.com" }]
