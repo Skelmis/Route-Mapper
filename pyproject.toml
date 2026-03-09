@@ -1,8 +1,11 @@
 [project]
 name = "route-mapper"
 version = "0.1.0"
-description = "Add your description here"
+description = "C# Source Code to API Docs "
+authors = [{ name = "Skelmis", email = "skelmis.craft@gmail.com" }]
 requires-python = ">=3.13"
+readme = "readme.md"
+license = "MIT"
 dependencies = [
     "code-ast>=0.1.2",
     "tree-sitter-c-sharp>=0.23.1",
@@ -12,3 +15,23 @@ dependencies = [
 dev = [
     "black>=26.3.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Skelmis/Route-Mapper"
+
+[tool.hatch.build.targets.sdist]
+include = ["src/skelmis/route_mapper"]
+
+[tool.hatch.build.targets.wheel]
+include = ["src/skelmis/route_mapper"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/skelmis/route_mapper" = "skelmis/route_mapper"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 100
+target-version = ["py313"]
