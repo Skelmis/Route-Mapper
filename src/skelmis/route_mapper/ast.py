@@ -62,7 +62,7 @@ class RMAstWalker(ASTVisitor):
         for child in class_node.children:
             match child.type:
                 case "attribute_list":
-                    attached_attributes.append(self.extract_attributes(child))
+                    attached_attributes.extend(self.extract_attributes(child))
                 case "modifier":
                     public_class = child.children[0].type == "public"
                 case "identifier":
@@ -90,7 +90,7 @@ class RMAstWalker(ASTVisitor):
         for node in method_node.children:
             match node.type:
                 case "attribute_list":
-                    attributes.append(self.extract_attributes(node))
+                    attributes.extend(self.extract_attributes(node))
                 case "modifier":
                     public_method = node.children[0].type == "public"
                 case "generic_name":
@@ -118,7 +118,7 @@ class RMAstWalker(ASTVisitor):
         for node in argument_node.named_children:
             match node.type:
                 case "attribute_list":
-                    attributes.append(self.extract_attributes(node))
+                    attributes.extend(self.extract_attributes(node))
                 case "predefined_type":
                     # non-nullable
                     argument_type = node.text.decode()
@@ -142,21 +142,23 @@ class RMAstWalker(ASTVisitor):
             is_nullable=is_nullable,attributes=attributes
         )
 
-    def extract_attributes(self, attribute_node: Node) -> Attribute:
-        name = None
-        args = None
-        for child in attribute_node.children:
-            if child.type != "attribute":
+    def extract_attributes(self, attribute_node: Node) -> list[Attribute]:
+        attributes:list[Attribute] = []
+        for attribute in attribute_node.named_children:
+            if attribute.type != "attribute":
                 continue
 
-            for sub_child in child.children:
-                match sub_child.type:
+            name = None
+            args = None
+            for child in attribute.children:
+                match child.type:
                     case "identifier":
-                        name = sub_child.text
+                        name = child.text
                     case "attribute_argument_list":
-                        args = self.get_string_literal(sub_child, [])
+                        args = self.get_string_literal(child, [])
 
-        return Attribute(name=name.decode(), arguments=args if args is not None else None)
+            attributes.append(Attribute(name=name.decode(), arguments=args if args is not None else None))
+        return attributes
 
     def get_string_literal(self, node: Node, content: list[str]) -> list[str]:
         if len(node.named_children) == 0:
