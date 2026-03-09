@@ -145,7 +145,7 @@ The following file output is generated for at a glance review:
             ]
         }
     ],
-    "routes": [
+    "methods": [
         {
             "method_name": "GetBase",
             "is_public_method": true,

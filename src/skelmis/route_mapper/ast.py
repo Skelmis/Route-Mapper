@@ -27,7 +27,7 @@ class Argument:
 
 
 @dataclasses.dataclass
-class Route:
+class Method:
     method_name: str
     is_public_method: bool
     return_type: str
@@ -40,7 +40,7 @@ class APIClass:
     class_name: str
     is_public_class: bool
     attributes: list[Attribute] = dataclasses.field(default_factory=list)
-    routes: list[Route] = dataclasses.field(default_factory=list)
+    methods: list[Method] = dataclasses.field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
@@ -58,7 +58,7 @@ class RMAstWalker(ASTVisitor):
 
     def build_class(self, class_node: Node) -> APIClass:
         attached_attributes: list[Attribute] = []
-        routes: list[Route] = []
+        methods: list[Method] = []
         class_name: str | None = None
         public_class: bool = False
         for child in class_node.children:
@@ -73,16 +73,16 @@ class RMAstWalker(ASTVisitor):
                     for class_declaration in child.children:
                         match class_declaration.type:
                             case "method_declaration":
-                                routes.append(self.build_class_methods(class_declaration))
+                                methods.append(self.build_class_methods(class_declaration))
 
         return APIClass(
             attributes=attached_attributes,
-            routes=routes,
+            methods=methods,
             class_name=class_name,
             is_public_class=public_class,
         )
 
-    def build_class_methods(self, method_node: Node) -> Route:
+    def build_class_methods(self, method_node: Node) -> Method:
         attributes: list[Attribute] = []
         arguments: list[Argument] = []
         public_method: bool | None = None
@@ -103,7 +103,7 @@ class RMAstWalker(ASTVisitor):
                     for arg_node in node.named_children:
                         arguments.append(self.extract_argument(arg_node))
 
-        return Route(
+        return Method(
             attributes=attributes,
             return_type=return_type,
             is_public_method=public_method,
