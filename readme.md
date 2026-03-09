@@ -66,8 +66,7 @@ public class WeatherForecastController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet(Name = "GetWeatherForecast")]
-    [AllowAnonymous]
+    [HttpGet(Name = "GetWeatherForecast"), AllowAnonymous]
     public IEnumerable<WeatherForecast> GetBase()
     {
         return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -91,11 +90,10 @@ public class WeatherForecastController : ControllerBase
             })
             .ToArray();
     }    
-    
     [HttpPost]
     [Authorize("ManagementAccess")]
     [Route("woah")]
-    public IEnumerable<WeatherForecast> Post([FromBody] int? limit, [FromQuery][Range(0, 10)] int page = 5)
+    public IEnumerable<WeatherForecast> Post([FromBody] int? limit, [FromQuery][Range(1, 10, ErrorMessage = "Expected 1-10")] int page = 5)
     {
         return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
@@ -157,8 +155,7 @@ The following file output is generated for at a glance review:
                 {
                     "name": "HttpGet",
                     "arguments": [
-                        "Name",
-                        "GetWeatherForecast"
+                        "Name = GetWeatherForecast"
                     ]
                 },
                 {
@@ -176,7 +173,9 @@ The following file output is generated for at a glance review:
                     "argument_type": "int",
                     "argument_name": "max",
                     "is_nullable": true,
-                    "argument_default": null
+                    "has_default_argument": true,
+                    "argument_default": "5",
+                    "attributes": []
                 }
             ],
             "attributes": [
@@ -201,13 +200,35 @@ The following file output is generated for at a glance review:
                     "argument_type": "int",
                     "argument_name": "limit",
                     "is_nullable": true,
-                    "argument_default": null
+                    "has_default_argument": false,
+                    "argument_default": null,
+                    "attributes": [
+                        {
+                            "name": "FromBody",
+                            "arguments": null
+                        }
+                    ]
                 },
                 {
                     "argument_type": "int",
                     "argument_name": "page",
                     "is_nullable": false,
-                    "argument_default": null
+                    "has_default_argument": true,
+                    "argument_default": "5",
+                    "attributes": [
+                        {
+                            "name": "FromQuery",
+                            "arguments": null
+                        },
+                        {
+                            "name": "Range",
+                            "arguments": [
+                                "1",
+                                "10",
+                                "ErrorMessage = Expected 1-10"
+                            ]
+                        }
+                    ]
                 }
             ],
             "attributes": [
