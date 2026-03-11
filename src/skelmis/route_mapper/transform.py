@@ -26,6 +26,7 @@ class Argument:
 
 @dataclasses.dataclass
 class Route:
+    controller: str
     method_name: str
     return_type: str
     is_implicit_route: bool
@@ -55,7 +56,7 @@ class APIClass:
 
 def transform_ast_to_routes(ast_api_class: ast.APIClass) -> APIClass:
     routes: list[Route] = []
-    authorisation_policies= ast_api_class.get_authorization_polices()
+    authorisation_policies = ast_api_class.get_authorization_polices()
     for method in ast_api_class.methods:
         if not method.is_public_method:
             # Google says routes must be public
@@ -76,7 +77,9 @@ def transform_ast_to_routes(ast_api_class: ast.APIClass) -> APIClass:
             accessible_at_urls=ast_api_class.get_method_routes(method),
             supported_http_verbs=ast_api_class.get_method_verbs(method),
             requires_authentication=method.requires_authentication(ast_api_class),
-            authorisation_policies=method.get_authorization_polices(ast_api_class),inherited_authorisation_policies=authorisation_policies
+            authorisation_policies=method.get_authorization_polices(ast_api_class),
+            inherited_authorisation_policies=authorisation_policies,
+            controller=ast_api_class.class_name,
         )
 
         if route.is_implicit_route:

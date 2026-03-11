@@ -52,7 +52,7 @@ class Method:
                 return True
         return False
 
-    def requires_authentication(self, parent_class:APIClass) -> bool:
+    def requires_authentication(self, parent_class: APIClass) -> bool:
         if parent_class.has_allow_anonymous_attribute or self.has_allow_anonymous_attribute:
             # This takes precedence
             return False
@@ -87,6 +87,7 @@ class Method:
                 policies.append(attr.arguments[0])
 
         return policies
+
 
 @dataclasses.dataclass
 class APIClass:
