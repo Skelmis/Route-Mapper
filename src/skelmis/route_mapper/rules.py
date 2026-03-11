@@ -62,7 +62,7 @@ def get_routes_group_by_authz(*api_classes:transform.APIClass) -> RoutesPerAutho
 
             policies = route.authorisation_policies
             policies.extend(route.inherited_authorisation_policies)
-            policies = frozenset(sorted(policies))
+            policies = frozenset(sorted(policies, key=lambda p:len(p), reverse=True))
             routes[(route.requires_authentication, policies)].append(route)
 
     rp = RoutesPerAuthorisationPolicy()
