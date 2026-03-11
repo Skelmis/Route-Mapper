@@ -10,11 +10,74 @@ A pentest tool aimed at making source code assisted C# testing a little better.
 
 *Yes, I got nerd snipped into making a proper tool instead of using string manipulation + Regex.*
 
+### Features
+
+1. Reading of C# code via a Concrete Syntax Tree (CST) library. This means we have full access to C# specific context and don't rely on educated guesses or homebrew parsing.
+2. Separation of CST, Routing and Rules. This means if you would like to you can read the raw method data, build rules off of our routing implementation or otherwise easily access the data you require.
+3. Pre-built rules that provide real world value. The kind of things that result in high value findings within 15 minutes.
+
 ### Usage
 
-At this stage it only exposes the raw AST extracted data and does no extrapolation. Future releases will provide this functionality but for now here is a use case example.
+The example provided below generates an `output` folder which contains two nested folders, `rules` and `controllers`.
 
-`pip install route-mapper` or `uv add route-mapper`
+The `controllers` folder contains a file per C# Controller found within source code. This provides generic information on routing but may be overwhelming on its own in larger code bases.
+
+To this end the `rules` folder provides a file per rule. Rules provide a description of how to interpret the content as well as the results of the rule itself. These are more useful at a glance and provide the primary recommended starting point.
+
+Install with: `pip install route-mapper` or `uv add route-mapper`
+
+Copy the following file and set `base_path` to the path of where the Controllers folder is located.
+
+```python
+import json
+from pathlib import Path
+
+from skelmis import route_mapper
+from skelmis.route_mapper import rules
+
+
+def main():
+    base_path: Path = Path(
+        "/path/to/folder/of/Controllers"
+    )
+    api_classes: list[route_mapper.transform.APIClass] = []
+    output_folder: Path = Path("output")
+    controllers_folder = output_folder / "controllers"
+    rules_folder = output_folder / "rules"
+    controllers_folder.mkdir(parents=True, exist_ok=True)
+    rules_folder.mkdir(parents=True, exist_ok=True)
+
+    for file in base_path.rglob("**/*Controller.cs"):
+        file_content = file.read_text()
+        api_class: route_mapper.ast.APIClass = route_mapper.file_to_api_class(file_content)
+        route_class: route_mapper.transform.APIClass = route_mapper.transform_ast_to_routes(
+            api_class
+        )
+        api_classes.append(route_class)
+        with open(output_folder / "controllers" / f"{file.name}.json", "w") as f:
+            f.write(json.dumps(route_class.as_dict(), indent=4))
+
+    implicit_routes: rules.ImplicitRoutes = rules.get_implicit_routes(*api_classes)
+    with open(output_folder / "rules" / f"implicit_routes.json", "w") as f:
+        f.write(json.dumps(implicit_routes.as_dict(), indent=4))
+
+    policy_grouped_routes: rules.RoutesPerAuthorisationPolicy = rules.get_routes_group_by_authz(*api_classes)
+    with open(output_folder / "rules" / f"policy_grouped_routes.json", "w") as f:
+        f.write(json.dumps(policy_grouped_routes.as_dict(), indent=4))
+
+    print("Done")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Once run this will generate the folders mentioned prior. Enjoy!
+
+---
+
+
+For an example of how to retrieve the raw results from the CST level, please refer to the below script.
 
 ```python
 import json
