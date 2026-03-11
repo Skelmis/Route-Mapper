@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import dataclasses
+import re
+from modulefinder import replacePackageMap
 from typing import Any
 
 import code_ast
@@ -34,6 +38,55 @@ class Method:
     arguments: list[Argument] = dataclasses.field(default_factory=list)
     attributes: list[Attribute] = dataclasses.field(default_factory=list)
 
+    @property
+    def has_route_attribute(self) -> bool:
+        for attr in self.attributes:
+            if attr.name == "Route":
+                return True
+        return False
+
+    @property
+    def has_http_attribute(self) -> bool:
+        for attr in self.attributes:
+            if attr.name.startswith("Http"):
+                return True
+        return False
+
+    def requires_authentication(self, parent_class:APIClass) -> bool:
+        if parent_class.has_allow_anonymous_attribute or self.has_allow_anonymous_attribute:
+            # This takes precedence
+            return False
+
+        return parent_class.has_authorize_attribute or self.has_authorize_attribute
+
+    @property
+    def has_allow_anonymous_attribute(self) -> bool:
+        # Special attribute to bypass auth
+        for attr in self.attributes:
+            if attr.name == "AllowAnonymous":
+                return True
+
+        return False
+
+    @property
+    def has_authorize_attribute(self) -> bool:
+        # Special attribute to bypass auth
+        for attr in self.attributes:
+            if attr.name == "Authorize":
+                return True
+
+        return False
+
+    def get_authorization_polices(self, parent_class: APIClass) -> list[str]:
+        if not self.requires_authentication(parent_class):
+            return []
+
+        policies: list[str] = []
+        for attr in self.attributes:
+            if attr.name == "Authorize" and attr.arguments is not None:
+                policies.append(attr.arguments[0])
+
+        return policies
 
 @dataclasses.dataclass
 class APIClass:
@@ -44,6 +97,125 @@ class APIClass:
 
     def as_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
+
+    @property
+    def cleaned_class_name(self) -> str:
+        return self.class_name.removesuffix("Controller")
+
+    @property
+    def area(self) -> str:
+        for attr in self.attributes:
+            if attr.name == "Area":
+                return attr.arguments[0]
+
+        return ""
+
+    @property
+    def requires_authentication(self) -> bool:
+        if self.has_allow_anonymous_attribute:
+            # This takes precedence
+            return False
+
+        return self.has_authorize_attribute
+
+    @property
+    def has_allow_anonymous_attribute(self) -> bool:
+        # Special attribute to bypass auth
+        for attr in self.attributes:
+            if attr.name == "AllowAnonymous":
+                return True
+
+        return False
+
+    @property
+    def has_authorize_attribute(self) -> bool:
+        # Special attribute to bypass auth
+        for attr in self.attributes:
+            if attr.name == "Authorize":
+                return True
+
+        return False
+
+    def get_authorization_polices(self) -> list[str]:
+        if self.has_allow_anonymous_attribute:
+            return []
+
+        policies: list[str] = []
+        for attr in self.attributes:
+            if attr.name == "Authorize" and attr.arguments is not None:
+                policies.append(attr.arguments[0])
+
+        return policies
+
+    def get_class_route(self, *, replace: bool = True) -> str:
+        url = None
+        for attr in self.attributes:
+            if attr.name == "Route":
+                url = attr.arguments[0]
+                if replace:
+                    url = url.replace("[controller]", self.cleaned_class_name).replace(
+                        "[area]", self.area
+                    )
+
+        assert url is not None, 'Controllers must have an attribute "Route"'
+        return url
+
+    def get_method_verbs(self, method: Method) -> list[str]:
+        verbs: list[str] = []
+        for attr in method.attributes:
+            if not attr.name.startswith("Http"):
+                continue
+
+            verbs.append(attr.name.removeprefix("Http").upper())
+
+        return verbs
+
+    def get_method_routes(self, method: Method) -> list[str]:
+        routes: list[str] = []
+        base_route: str | None = None
+        class_base = self.get_class_route()
+        for attr in method.attributes:
+            if attr.name != "Route" and not attr.name.startswith("Http"):
+                continue
+
+            if attr.name.startswith("Http"):
+                if attr.arguments is None:
+                    # [HttpGet]
+                    if "[action]" in class_base:
+                        # [Route("[controller]/[action]")]
+                        base_route = class_base.replace("[action]", method.method_name)
+
+                    continue
+
+                method_route = attr.arguments[0]
+                if re.match(r"^ *[a-zA-Z0-9]+ ?=", method_route):
+                    # Argument, not route
+                    # HttpGet(Name = "GetWeatherForecast")
+                    base_route = class_base.replace("[action]", method.method_name)
+                    continue
+
+            else:
+                method_route = attr.arguments[0]
+
+            method_route = (
+                method_route.replace(
+                    "[controller]",
+                    self.cleaned_class_name,
+                )
+                .replace("[area]", self.area)
+                .replace("[action]", method.method_name)
+            )
+            if method_route.startswith("/"):
+                routes.append(method_route)
+            else:
+                routes.append(
+                    "/".join([class_base.replace("[action]", method.method_name), method_route])
+                )
+
+        if not routes and base_route is not None:
+            routes.append(base_route)
+
+        return routes
 
 
 # noinspection PyMethodMayBeStatic
@@ -115,7 +287,7 @@ class RMAstWalker(ASTVisitor):
         argument_type = None
         argument_name = None
         argument_default: str | None = None
-        has_default_argument: bool=False
+        has_default_argument: bool = False
         is_nullable: bool = False
         attributes: list[Attribute] = []
         for node in argument_node.children:
@@ -142,7 +314,8 @@ class RMAstWalker(ASTVisitor):
         return Argument(
             argument_type=argument_type,
             argument_name=argument_name,
-            argument_default=argument_default,has_default_argument=has_default_argument,
+            argument_default=argument_default,
+            has_default_argument=has_default_argument,
             is_nullable=is_nullable,
             attributes=attributes,
         )

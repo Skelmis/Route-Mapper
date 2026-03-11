@@ -274,3 +274,4 @@ The following file output is generated for at a glance review:
 ### Gotchas
 
 - Everything is a string. It's in the source as `1`? Cool, now it's `"1"`. Types are hard and too complicated for this use-case.
+- Inheritance is not handled. If your API has parent class functionality, this will not see it. 
