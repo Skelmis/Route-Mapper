@@ -164,7 +164,13 @@ class APIClass:
     def get_method_verbs(self, method: Method) -> list[str]:
         verbs: list[str] = []
         for attr in method.attributes:
-            if not attr.name.startswith("Http"):
+            if attr.name == "AcceptVerbs":
+                for item in attr.arguments:
+                    verbs.append(item.upper())
+
+                continue
+
+            elif not attr.name.startswith("Http"):
                 continue
 
             verbs.append(attr.name.removeprefix("Http").upper())
