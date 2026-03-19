@@ -30,7 +30,9 @@ def main():
     with open(output_folder / "rules" / f"implicit_routes.json", "w") as f:
         f.write(json.dumps(implicit_routes.as_dict(), indent=4))
 
-    policy_grouped_routes: rules.RoutesPerAuthorisationPolicy = rules.get_routes_group_by_authz(*api_classes)
+    policy_grouped_routes: rules.RoutesPerAuthorisationPolicy = rules.get_routes_group_by_authz(
+        *api_classes
+    )
     with open(output_folder / "rules" / f"policy_grouped_routes.json", "w") as f:
         f.write(json.dumps(policy_grouped_routes.as_dict(), indent=4))
 

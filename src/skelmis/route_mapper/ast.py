@@ -258,7 +258,7 @@ class RMAstWalker(ASTVisitor):
     def build_class_methods(self, method_node: Node) -> Method:
         attributes: list[Attribute] = []
         arguments: list[Argument] = []
-        method_identifiers: list[str]=[]
+        method_identifiers: list[str] = []
         return_type: str | None = None
         method_name: str | None = None
 
@@ -299,8 +299,9 @@ class RMAstWalker(ASTVisitor):
                     # non-nullable
                     argument_type = node.text.decode()
                 case "nullable_type":
-                    assert (
-                        node.children[0].type == "predefined_type"
+                    assert node.children[0].type in (
+                        "predefined_type",
+                        "identifier",
                     ), "Expected to see the variable type"
                     is_nullable = True
                     argument_type = node.children[0].text.decode()

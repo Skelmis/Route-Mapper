@@ -31,11 +31,13 @@ def get_implicit_routes(*api_classes: transform.APIClass) -> ImplicitRoutes:
 
     return ir
 
+
 @dataclasses.dataclass
 class AuthorisationPolicy:
     requires_authentication: bool
     applied_policies: list[str]
     routes: list[transform.Route]
+
 
 @dataclasses.dataclass
 class RoutesPerAuthorisationPolicy:
@@ -48,12 +50,14 @@ class RoutesPerAuthorisationPolicy:
         "then no authorisation checks are done and access is "
         "entirely based on the 'requires_authentication' field."
     )
-    routes: list[AuthorisationPolicy]= dataclasses.field(default_factory=list)
+    routes: list[AuthorisationPolicy] = dataclasses.field(default_factory=list)
+
     def as_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
 
-def get_routes_group_by_authz(*api_classes:transform.APIClass) -> RoutesPerAuthorisationPolicy:
-    routes: dict[tuple[bool,frozenset[str]], list[transform.Route]] = defaultdict(list)
+
+def get_routes_group_by_authz(*api_classes: transform.APIClass) -> RoutesPerAuthorisationPolicy:
+    routes: dict[tuple[bool, frozenset[str]], list[transform.Route]] = defaultdict(list)
     for api_class in api_classes:
         for route in api_class.routes:
             if not route.requires_authentication:
@@ -62,12 +66,18 @@ def get_routes_group_by_authz(*api_classes:transform.APIClass) -> RoutesPerAutho
 
             policies = route.authorisation_policies
             policies.extend(route.inherited_authorisation_policies)
-            policies = frozenset(sorted(policies, key=lambda p:len(p), reverse=True))
+            policies = frozenset(sorted(policies, key=lambda p: len(p), reverse=True))
             routes[(route.requires_authentication, policies)].append(route)
 
     rp = RoutesPerAuthorisationPolicy()
-    for k,v in routes.items():
+    for k, v in routes.items():
         requires_authentication, policies = k
-        rp.routes.append(AuthorisationPolicy(applied_policies=list(policies), routes=v,requires_authentication=requires_authentication))
+        rp.routes.append(
+            AuthorisationPolicy(
+                applied_policies=list(policies),
+                routes=v,
+                requires_authentication=requires_authentication,
+            )
+        )
 
     return rp
