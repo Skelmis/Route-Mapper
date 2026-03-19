@@ -30,6 +30,7 @@ Copy the following file and set `base_path` to the path of where the Controllers
 
 ```python
 import json
+import sys
 from pathlib import Path
 
 from skelmis import route_mapper
