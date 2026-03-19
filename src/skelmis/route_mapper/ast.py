@@ -258,7 +258,7 @@ class RMAstWalker(ASTVisitor):
     def build_class_methods(self, method_node: Node) -> Method:
         attributes: list[Attribute] = []
         arguments: list[Argument] = []
-        public_method: bool | None = None
+        method_identifiers: list[str]=[]
         return_type: str | None = None
         method_name: str | None = None
 
@@ -267,7 +267,7 @@ class RMAstWalker(ASTVisitor):
                 case "attribute_list":
                     attributes.extend(self.extract_attributes(node))
                 case "modifier":
-                    public_method = node.children[0].type == "public"
+                    method_identifiers.append(node.children[0].text.decode())
                 case "generic_name":
                     return_type = node.text.decode()
                 case "identifier":
@@ -279,7 +279,7 @@ class RMAstWalker(ASTVisitor):
         return Method(
             attributes=attributes,
             return_type=return_type,
-            is_public_method=public_method,
+            is_public_method="public" in method_identifiers,
             method_name=method_name,
             arguments=arguments,
         )
