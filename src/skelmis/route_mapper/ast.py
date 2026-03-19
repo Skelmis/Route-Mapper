@@ -48,7 +48,7 @@ class Method:
     @property
     def has_http_attribute(self) -> bool:
         for attr in self.attributes:
-            if attr.name.startswith("Http"):
+            if attr.name.startswith("Http") or attr.name == "AcceptVerbs":
                 return True
         return False
 
