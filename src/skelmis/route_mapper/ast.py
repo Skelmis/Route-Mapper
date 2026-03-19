@@ -77,6 +77,16 @@ class Method:
 
         return False
 
+    @property
+    def is_non_action(self) -> bool:
+        for attr in self.attributes:
+            if attr.name == "NonAction":
+                # 'Represents an attribute that is used to indicate
+                # that a controller method is not an action method.'
+                return True
+
+        return False
+
     def get_authorization_polices(self, parent_class: APIClass) -> list[str]:
         if not self.requires_authentication(parent_class):
             return []
@@ -87,6 +97,18 @@ class Method:
                 policies.append(attr.arguments[0])
 
         return policies
+
+    def is_implicit_route(self) -> bool:
+        if self.is_non_action:
+            return False
+
+        return (
+            True
+            if not self.has_route_attribute
+            and not self.has_http_attribute
+            and self.is_public_method
+            else False
+        )
 
 
 @dataclasses.dataclass

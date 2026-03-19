@@ -62,18 +62,16 @@ def transform_ast_to_routes(ast_api_class: ast.APIClass) -> APIClass:
             # Google says routes must be public
             continue
 
+        elif method.is_non_action:
+            # Explicitly not a route
+            continue
+
         route = Route(
             attributes=method.attributes,
             return_type=method.return_type,
             method_name=method.method_name,
             arguments=method.arguments,
-            is_implicit_route=(
-                True
-                if not method.has_route_attribute
-                and not method.has_http_attribute
-                and method.is_public_method
-                else False
-            ),
+            is_implicit_route=method.is_implicit_route(),
             accessible_at_urls=ast_api_class.get_method_routes(method),
             supported_http_verbs=ast_api_class.get_method_verbs(method),
             requires_authentication=method.requires_authentication(ast_api_class),
