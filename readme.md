@@ -49,10 +49,15 @@ def main():
 
     for file in base_path.rglob("**/*Controller.cs"):
         file_content = file.read_text()
-        api_class: route_mapper.ast.APIClass = route_mapper.file_to_api_class(file_content)
-        route_class: route_mapper.transform.APIClass = route_mapper.transform_ast_to_routes(
-            api_class
-        )
+        try:
+            api_class: route_mapper.ast.APIClass = route_mapper.file_to_api_class(file_content)
+            route_class: route_mapper.transform.APIClass = route_mapper.transform_ast_to_routes(
+                api_class
+            )
+        except:
+            print(f"Error while working on file {file}, skipping", file=sys.stderr)
+            continue
+            
         api_classes.append(route_class)
         with open(output_folder / "controllers" / f"{file.name}.json", "w") as f:
             f.write(json.dumps(route_class.as_dict(), indent=4))
