@@ -381,10 +381,24 @@ class RMAstWalker(ASTVisitor):
             and node.children[1].type == "="
         ):
             # ErrorMessage = "Expected 1-10"
+            # Policy = Policy.ManagementAccess
             new_content = []
             self.get_string_literal(node.named_children[0], new_content)
             self.get_string_literal(node.named_children[1], new_content)
             content.append(" = ".join(new_content))
+            return content
+
+        elif (
+            len(node.children) == 3
+            and node.children[0].type == "identifier"
+            and node.children[1].type == "."
+        ):
+            # Handling for:
+            # Policy = Policy.ManagementAccess
+            new_content = []
+            self.get_string_literal(node.named_children[0], new_content)
+            self.get_string_literal(node.named_children[1], new_content)
+            content.append(".".join(new_content))
             return content
 
         for child in node.named_children:
