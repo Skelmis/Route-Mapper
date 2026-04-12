@@ -36,6 +36,8 @@ def get_implicit_routes(*api_classes: transform.APIClass) -> ImplicitRoutes:
 class AuthorisationPolicy:
     requires_authentication: bool
     applied_policies: list[str]
+    affected_method_names: list[str]
+    """Makes it easier to look for useful routes at a glance`s"""
     routes: list[transform.Route]
 
 
@@ -72,11 +74,13 @@ def get_routes_group_by_authz(*api_classes: transform.APIClass) -> RoutesPerAuth
     rp = RoutesPerAuthorisationPolicy()
     for k, v in routes.items():
         requires_authentication, policies = k
+        affected_method_names = [f"{r.controller}:{r.method_name}" for r in v]
         rp.routes.append(
             AuthorisationPolicy(
                 applied_policies=list(policies),
                 routes=v,
                 requires_authentication=requires_authentication,
+                affected_method_names=list(sorted(affected_method_names))
             )
         )
 
