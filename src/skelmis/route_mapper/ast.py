@@ -204,9 +204,10 @@ class APIClass:
         base_route: str | None = None
         class_base = self.get_class_route()
         for attr in method.attributes:
-            if attr.name != "Route" and not attr.name.startswith("Http"):
+            if attr.name not in  ("Route", "AcceptVerbs")and not attr.name.startswith("Http"):
                 continue
 
+            method_route =""
             if attr.name.startswith("Http"):
                 if attr.arguments is None:
                     # [HttpGet]
@@ -223,8 +224,11 @@ class APIClass:
                     base_route = class_base.replace("[action]", method.method_name)
                     continue
 
-            else:
+            elif attr.name == 'Route':
                 method_route = attr.arguments[0]
+
+            elif attr.name == "AcceptVerbs":
+                method_route = self.get_class_route(replace=False)
 
             method_route = (
                 method_route.replace(
