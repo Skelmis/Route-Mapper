@@ -344,3 +344,4 @@ The following file output is generated for at a glance review:
 
 - Everything is a string. It's in the source as `1`? Cool, now it's `"1"`. Types are hard and too complicated for this use-case.
 - Inheritance is not handled. If your API has parent class functionality, this will not see it. 
+- If default routing information is defined in another file such as `program.cs` this program cannot currently use it. For example defining the routing pattern in `program.cs` and then not adding `[Route]` to controllers will result in empty accessible URLs from this tool
