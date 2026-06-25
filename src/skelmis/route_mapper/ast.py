@@ -180,7 +180,12 @@ class APIClass:
                         "[area]", self.area
                     )
 
-        assert url is not None, 'Controllers must have an attribute "Route"'
+        if url is None:
+            # Technically the method derives the route
+            # if the parent doesnt set one. Also depends
+            # on the routing attribute used like Route vs HTTPGet
+            url = ""
+
         return url
 
     def get_method_verbs(self, method: Method) -> list[str]:
@@ -245,7 +250,7 @@ class APIClass:
                     "/".join([class_base.replace("[action]", method.method_name), method_route])
                 )
 
-        if not routes and base_route is not None:
+        if not routes and base_route is not None and base_route:
             routes.append(base_route)
 
         return routes
